@@ -1,7 +1,7 @@
 from socket import *
 import threading
 
-serverPort = 12001
+serverPort = 12000
 serverSocket = socket(AF_INET, SOCK_STREAM)
 serverSocket.bind(('', serverPort))
 serverSocket.listen()
@@ -26,11 +26,13 @@ def addClient(clientSocket, addr):
 			lock.acquire()
 			client_list.append(clientSocket)
 			lock.release()
+			sendMemberInfo(data[1], ' enters.')
 			#print(client_list,'\n')
 		elif data[0] == '@unregister':
 			lock.acquire()
 			client_list.remove(clientSocket)
 			lock.release()
+			sendMemberInfo(data[1], ' exits.')
 			#print(client_list,'\n')
 		elif data[0] == '@chat':
 			sendToAll(data[1], data[2])
@@ -41,6 +43,12 @@ def addClient(clientSocket, addr):
 def sendToAll(ID, content):
 	global serverSocket, client_list
 	msg = ID + ": " + content
+	for clientSocket in client_list:
+		clientSocket.send(msg.encode())
+
+def sendMemberInfo(ID, status):
+	global serverSocket, client_list
+	msg = ID + status + ' Current # of members: '+str(len(client_list))
 	for clientSocket in client_list:
 		clientSocket.send(msg.encode())
 

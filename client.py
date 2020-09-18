@@ -2,7 +2,7 @@ from socket import *
 import threading
 
 serverIP = '192.168.0.4'
-serverPort = 12001
+serverPort = 12000
 clientSocket = socket(AF_INET, SOCK_STREAM)
 clientSocket.connect((serverIP, serverPort))
 
