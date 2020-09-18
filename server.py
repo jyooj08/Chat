@@ -7,6 +7,7 @@ serverSocket.bind(('', serverPort))
 serverSocket.listen()
 
 client_list = []
+lock = threading.Lock()
 
 print('The TCP server is ready to receive')
 
@@ -22,10 +23,14 @@ def addClient(clientSocket, addr):
 		
 		data = msg.split('/')
 		if data[0] == '@register':
+			lock.acquire()
 			client_list.append(clientSocket)
+			lock.release()
 			#print(client_list,'\n')
 		elif data[0] == '@unregister':
+			lock.acquire()
 			client_list.remove(clientSocket)
+			lock.release()
 			#print(client_list,'\n')
 		elif data[0] == '@chat':
 			sendToAll(data[1], data[2])
