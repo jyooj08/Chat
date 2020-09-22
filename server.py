@@ -13,8 +13,13 @@ print('The TCP server is ready to receive')
 
 def addClient(clientSocket, addr):
 	global client_list
+	client_name = ""
 	while True:
-		msg = clientSocket.recv(1024).decode()
+		try:
+			msg = clientSocket.recv(1024).decode()
+		except:
+			print(client_name, ': connection failed')
+			break
 		
 		if not msg:
 			break
@@ -26,6 +31,7 @@ def addClient(clientSocket, addr):
 			lock.acquire()
 			client_list.append(clientSocket)
 			lock.release()
+			client_name = data[1]
 			sendMemberInfo(data[1], ' enters.')
 			#print(client_list,'\n')
 		elif data[0] == '@unregister':
