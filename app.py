@@ -1,14 +1,21 @@
 from tkinter import *
+from socket import *
+import threading
+
+serverIP = '192.168.0.59'
+serverPort = 12000
+clientSocket = socket(AF_INET, SOCK_STREAM)
+clientSocket.connect((serverIP, serverPort))
 
 def btncmd():
-    readOnlyText.configure(state="normal")
-    readOnlyText.insert(END, entry.get()+"\n")
-    entry.delete(0,END)
-    readOnlyText.configure(state="disabled")
-    readOnlyText.see(END)
+    global clientSocket
+    msg = entry.get()
+    msg = '@chat/'+ID+'/'+msg
+    clientSocket.send(msg.encode())
 
 def pressEnter(event):
     btncmd()
+
 
 root = Tk()
 root.geometry("500x400")
@@ -60,4 +67,35 @@ readOnlyText.configure(state="disabled")
 readOnlyText.pack(side="left", fill="both")
 readOnlyText.configure(yscrollcommand=chat_scroll.set)
 
+####################
+def getMessage():
+    global clientSocket, readOnlyText, entry
+    while True:
+        msg = clientSocket.recv(1024)
+        if not msg:
+            continue
+        readOnlyText.configure(state="normal")
+        readOnlyText.insert(END, msg.decode()+"\n")
+        entry.delete(0,END)
+        readOnlyText.configure(state="disabled")
+        readOnlyText.see(END)
+
+        print(msg.decode())
+
+#register client
+ID = input('Enter your ID: ')
+msg = "@register/"+ID
+clientSocket.send(msg.encode())
+
+t = threading.Thread(target=getMessage)
+t.daemon = True
+t.start()
+
+
+
 root.mainloop()
+
+msg = "@unregister/"+ID
+clientSocket.send(msg.encode())
+
+clientSocket.close()
