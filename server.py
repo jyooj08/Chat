@@ -1,7 +1,7 @@
 from socket import *
 import threading
 
-serverPort = 12000
+serverPort = 12001
 serverSocket = socket(AF_INET, SOCK_STREAM)
 serverSocket.bind(('', serverPort))
 serverSocket.listen()
@@ -17,8 +17,8 @@ def addClient(clientSocket, addr):
 	while True:
 		try:
 			msg = clientSocket.recv(1024).decode()
-		except:
-			print(client_name, ': connection failed')
+		except Exception as e:
+			print('Error: ', e)
 			break
 		
 		if not msg:
@@ -36,10 +36,10 @@ def addClient(clientSocket, addr):
 			sendClientList(clientSocket)
 			#print(client_list,'\n')
 		elif data[0] == '@unregister':
-			sendMemberInfo(client_name, 'unregister')
 			lock.acquire()
 			client_list.remove((client_name, clientSocket))
 			lock.release()
+			sendMemberInfo(client_name, 'unregister')
 			#print(client_list,'\n')
 		elif data[0] == '@chat':
 			sendToAll(data[1], data[2])
@@ -52,13 +52,19 @@ def sendClientList(clientSocket):
 	msg = "@init_client_list"
 	for client in client_list:
 		msg += ("/"+client[0])
-	clientSocket.send(msg.encode())
+	try:
+		clientSocket.send(msg.encode())
+	except Exception as e:
+		print('Error: ', e)
 	
 def sendToAll(ID, content):
 	global serverSocket, client_list
 	msg = ID + ": " + content
-	for client in client_list:
-		client[1].send(msg.encode())
+	try:
+		for client in client_list:
+			client[1].send(msg.encode())
+	except Exception as e:
+		print('Error: ', e)
 
 def sendMemberInfo(ID, status):
 	global serverSocket, client_list
@@ -67,10 +73,12 @@ def sendMemberInfo(ID, status):
 		msg = "@add_client/"+ID
 	elif status == "unregister":
 		msg = "@remove_client/"+ID
-		
-	for client in client_list:
-		client[1].send(msg.encode())
-
+	
+	try:
+		for client in client_list:
+			client[1].send(msg.encode())
+	except Exception as e:
+		print('Error: ', e)
 
 while True:
 	clientSocket, addr = serverSocket.accept()
