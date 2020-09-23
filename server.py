@@ -6,7 +6,7 @@ serverSocket = socket(AF_INET, SOCK_STREAM)
 serverSocket.bind(('', serverPort))
 serverSocket.listen()
 
-client_list = []
+client_list = [] #(client_name, clinetSocket)
 lock = threading.Lock()
 
 print('The TCP server is ready to receive')
@@ -28,17 +28,18 @@ def addClient(clientSocket, addr):
 		
 		data = msg.split('/')
 		if data[0] == '@register':
-			lock.acquire()
-			client_list.append(clientSocket)
-			lock.release()
 			client_name = data[1]
-			sendMemberInfo(data[1], ' enters.')
+			sendMemberInfo(client_name, 'register')
+			lock.acquire()
+			client_list.append((client_name, clientSocket))
+			lock.release()
+			sendClientList(clientSocket)
 			#print(client_list,'\n')
 		elif data[0] == '@unregister':
+			sendMemberInfo(client_name, 'unregister')
 			lock.acquire()
-			client_list.remove(clientSocket)
+			client_list.remove((client_name, clientSocket))
 			lock.release()
-			sendMemberInfo(data[1], ' exits.')
 			#print(client_list,'\n')
 		elif data[0] == '@chat':
 			sendToAll(data[1], data[2])
@@ -46,17 +47,29 @@ def addClient(clientSocket, addr):
 		
 	clientSocket.close()
 	
+def sendClientList(clientSocket):
+	global serverSocket, client_list
+	msg = "@init_client_list"
+	for client in client_list:
+		msg += ("/"+client[0])
+	clientSocket.send(msg.encode())
+	
 def sendToAll(ID, content):
 	global serverSocket, client_list
 	msg = ID + ": " + content
-	for clientSocket in client_list:
-		clientSocket.send(msg.encode())
+	for client in client_list:
+		client[1].send(msg.encode())
 
 def sendMemberInfo(ID, status):
 	global serverSocket, client_list
-	msg = ID + status + ' Current # of members: '+str(len(client_list))
-	for clientSocket in client_list:
-		clientSocket.send(msg.encode())
+	msg = ""
+	if status == "register":
+		msg = "@add_client/"+ID
+	elif status == "unregister":
+		msg = "@remove_client/"+ID
+		
+	for client in client_list:
+		client[1].send(msg.encode())
 
 
 while True:

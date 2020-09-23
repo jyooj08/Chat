@@ -1,18 +1,35 @@
 from socket import *
 import threading
 
-serverIP = '192.168.0.59'
+serverIP = '192.168.0.5'
 serverPort = 12000
 clientSocket = socket(AF_INET, SOCK_STREAM)
 clientSocket.connect((serverIP, serverPort))
+client_list = []
 
 def getMessage():
 	global clientSocket
 	while True:
-		msg = clientSocket.recv(1024)
+		msg = clientSocket.recv(1024).decode()
 		if not msg:
 			continue
-		print(msg.decode())
+			
+		data = msg.split("/")
+		if data[0] == "@init_client_list":
+			length = len(data)
+			for i in range(1, length):
+				client_list.append(data[i])
+			print("client_list: ", client_list)
+			
+		elif data[0] == "@add_client":
+			client_list.append(data[1])
+			print(data[1],' enters. Current # of members: ', len(client_list))
+		
+		elif data[0] == "@remove_client":
+			client_list.remove(data[1])
+			print(data[1], ' exits. Current # of members: ', len(client_list))
+		else:
+			print(msg)
 
 
 #register client
