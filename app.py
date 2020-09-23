@@ -2,10 +2,11 @@ from tkinter import *
 from socket import *
 import threading
 
-serverIP = '192.168.0.59'
-serverPort = 12000
+serverIP = '192.168.0.5'
+serverPort = 12001
 clientSocket = socket(AF_INET, SOCK_STREAM)
 clientSocket.connect((serverIP, serverPort))
+client_list = []
 
 def btncmd():
     global clientSocket
@@ -41,10 +42,6 @@ label1 = Label(member_frame, text="member_frame")
 label1.pack()
 
 member_list = Listbox(member_frame, selectmode="extended", height=0)
-member_list.insert(END, "member1")
-member_list.insert(END, "member2")
-member_list.insert(END, "member3")
-#member_list.configure(state="disabled")
 member_list.pack()
 
 # member_scroll = Scrollbar(member_frame)
@@ -71,16 +68,45 @@ readOnlyText.configure(yscrollcommand=chat_scroll.set)
 def getMessage():
     global clientSocket, readOnlyText, entry
     while True:
-        msg = clientSocket.recv(1024)
+        msg = clientSocket.recv(1024).decode()
         if not msg:
             continue
-        readOnlyText.configure(state="normal")
-        readOnlyText.insert(END, msg.decode()+"\n")
-        entry.delete(0,END)
-        readOnlyText.configure(state="disabled")
-        readOnlyText.see(END)
 
-        print(msg.decode())
+        data = msg.split("/")
+        if data[0] == "@init_client_list":
+            length = len(data)
+            for i in range(1, length):
+                member_list.insert(END,data[i])
+                
+        elif data[0] == "@add_client":
+            member_list.insert(END, data[1])
+            readOnlyText.configure(state="norma")
+            readOnlyText.insert(END, data[1]+" enters.\n")
+            readOnlyText.configure(state="disabled")
+            readOnlyText.see(END)
+            
+        
+        elif data[0] == "@remove_client":
+            #client_list.remove(data[1])
+            #print('delete ', member_list.index(data[1]))
+            list_size = member_list.size()
+            for i in range(0, list_size):
+                if data[1] == member_list.get(i):
+                    member_list.delete(i)
+                    break
+
+            readOnlyText.configure(state="normal")
+            readOnlyText.insert(END, data[1]+" exits.\n")
+            readOnlyText.configure(state="disabled")
+            readOnlyText.see(END)
+            
+        else:
+            print(msg)
+            readOnlyText.configure(state="normal")
+            readOnlyText.insert(END, msg+"\n")
+            entry.delete(0,END)
+            readOnlyText.configure(state="disabled")
+            readOnlyText.see(END)
 
 #register client
 ID = input('Enter your ID: ')
