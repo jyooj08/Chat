@@ -52,6 +52,7 @@ def sendClientList(clientSocket):
 	msg = "@init_client_list"
 	for client in client_list:
 		msg += ("/"+client[0])
+	
 	try:
 		clientSocket.send(msg.encode())
 	except Exception as e:

@@ -1,21 +1,48 @@
 from tkinter import *
 from socket import *
 import threading
+import tkinter.messagebox as msbox
 
-serverIP = '192.168.0.5'
+serverIP = '192.168.243.1'
 serverPort = 12001
 clientSocket = socket(AF_INET, SOCK_STREAM)
 clientSocket.connect((serverIP, serverPort))
 client_list = []
+ID = ""
+color="#b0e0e6"
 
 def btncmd():
     global clientSocket
     msg = entry.get()
+    if msg == "":
+        return
     msg = '@chat/'+ID+'/'+msg
     clientSocket.send(msg.encode())
 
 def pressEnter(event):
     btncmd()
+
+def login():
+    global ID
+    ID = id_entry.get()
+    if ID== "":
+        msbox.showwarning("Warning", "Enter your ID")
+        return
+
+    msg = "@register/"+ID
+    clientSocket.send(msg.encode())
+
+    t = threading.Thread(target=getMessage)
+    t.daemon=True
+    t.start()
+
+
+    color_frame.destroy()
+    main_frame.pack(fill='both', expand=True)
+
+def pressLogin(event):
+    login()
+
 
 
 root = Tk()
@@ -24,24 +51,39 @@ root.resizable(False, False)
 root.title("Chat Room")
 root.propagate(0)
 
-input_frame = Frame(root, relief="solid", bd=1)
+color_frame = Frame(root, bg=color)
+color_frame.pack(fill='both', expand=True)
+login_frame = Frame(color_frame, bg=color)
+login_frame.pack(fill='x', expand=True)
+id_label = Label(login_frame, text="Enter your ID", bg=color)
+id_entry = Entry(login_frame, width=30)
+login_btn = Button(login_frame, text="Login", command=login, bg="#ffffff", padx=10)
+
+id_label.pack()
+id_entry.bind('<Return>', pressLogin)
+id_entry.pack()
+login_btn.pack()
+
+
+main_frame = Frame(root, bg=color, padx=3, pady=3)
+
+input_frame = Frame(main_frame, padx=3, pady=3, bg=color)
 input_frame.pack(side="bottom", fill="both")
 
-entry = Entry(input_frame, width=50)
+entry = Entry(input_frame)
 entry.bind('<Return>', pressEnter)
-entry.pack(side="left")
+entry.pack(side="left", fill="x", expand=True)
 
-enter_btn = Button(input_frame, text="Enter", command=btncmd)
+enter_btn = Button(input_frame, text="Enter", command=btncmd, padx=2)
 enter_btn.pack(side="right")
 
 ##################################
-member_frame = Frame(root, relief="solid", bd=1, width=150)
+member_frame = LabelFrame(main_frame, text="member_list", padx=3, pady=3, bg=color)
 member_frame.pack(side="left", fill="both")
 
-label1 = Label(member_frame, text="member_frame")
-label1.pack()
-
-member_list = Listbox(member_frame, selectmode="extended", height=0)
+list_frame = Frame(member_frame, bg="white")
+list_frame.pack(fill="both", expand=True)
+member_list = Listbox(list_frame, selectmode="extended", height=2, relief="solid")
 member_list.pack()
 
 # member_scroll = Scrollbar(member_frame)
@@ -49,12 +91,9 @@ member_list.pack()
 # member_scroll.configure(member_list.yview)
 
 ##################################
-chat_frame = Frame(root, relief="solid", bd=1, width=250)
+chat_frame = LabelFrame(main_frame, text="Chat", padx=3, pady=3, bg=color)
 chat_frame.pack(side="right", fill="both")
 readOnlyText = Text(chat_frame)
-
-label2 = Label(chat_frame, text="chat_frame")
-label2.pack()
 
 chat_scroll = Scrollbar(chat_frame, command=readOnlyText.yview)
 chat_scroll.pack(side="right", fill="y")
@@ -71,7 +110,7 @@ def getMessage():
         msg = clientSocket.recv(1024).decode()
         if not msg:
             continue
-
+        
         data = msg.split("/")
         if data[0] == "@init_client_list":
             length = len(data)
@@ -107,15 +146,6 @@ def getMessage():
             entry.delete(0,END)
             readOnlyText.configure(state="disabled")
             readOnlyText.see(END)
-
-#register client
-ID = input('Enter your ID: ')
-msg = "@register/"+ID
-clientSocket.send(msg.encode())
-
-t = threading.Thread(target=getMessage)
-t.daemon = True
-t.start()
 
 
 
