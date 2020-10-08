@@ -3,7 +3,7 @@ from socket import *
 import threading
 import tkinter.messagebox as msbox
 
-serverIP = '192.168.243.1'
+serverIP = '192.168.0.15'
 serverPort = 12001
 clientSocket = socket(AF_INET, SOCK_STREAM)
 clientSocket.connect((serverIP, serverPort))
@@ -81,11 +81,15 @@ enter_btn.pack(side="right")
 member_frame = LabelFrame(main_frame, text="member_list", padx=3, pady=3, bg=color)
 member_frame.pack(side="left", fill="both")
 
+member_scroll = Scrollbar(member_frame)
+member_scroll.pack(side="right", fill="y")
+
 list_frame = Frame(member_frame, bg="white")
 list_frame.pack(fill="both", expand=True)
-member_list = Listbox(list_frame, selectmode="extended", height=2, relief="solid")
-member_list.pack()
+member_list = Listbox(list_frame, selectmode="extended", yscrollcommand=member_scroll.set, state='disabled')
+member_list.pack(side="left", fill="y", expand=True)
 
+member_scroll.config(command=member_list.yview)
 # member_scroll = Scrollbar(member_frame)
 # member_scroll.pack(side="right", fill="y")
 # member_scroll.configure(member_list.yview)
@@ -114,12 +118,17 @@ def getMessage():
         data = msg.split("/")
         if data[0] == "@init_client_list":
             length = len(data)
+            member_list.config(state='normal')
             for i in range(1, length):
                 member_list.insert(END,data[i])
+            member_list.config(state='disabled')
                 
         elif data[0] == "@add_client":
+            member_list.config(state='normal')
             member_list.insert(END, data[1])
-            readOnlyText.configure(state="norma")
+            member_list.config(state='disabled')
+            
+            readOnlyText.configure(state="normal")
             readOnlyText.insert(END, data[1]+" enters.\n")
             readOnlyText.configure(state="disabled")
             readOnlyText.see(END)
